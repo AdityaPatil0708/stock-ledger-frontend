@@ -163,7 +163,7 @@ function StockTab({ ledger, canEdit }: { ledger: LedgerApi; canEdit: boolean }) 
           </button>
         )}
         <button className="btn btn-ghost" onClick={ledger.exportToExcel}>
-          ⭳ Export to Excel
+          Export to Excel
         </button>
       </div>
       <div className="table-card">
@@ -302,7 +302,7 @@ function ReservationCell({ it, ledger, canEdit }: { it: StockItem; ledger: Ledge
       <label className="res-type-chip">
         <input type="checkbox" checked={types.includes("Reservation")} onChange={(e) => toggleType("Reservation", e.target.checked)} /> Resv.
       </label>
-      <input type="number" className="res-qty" placeholder="Qty" min="0" step="0.001" value={qtyStr} onChange={(e) => setQtyStr(e.target.value)} />
+      <input type="text" className="res-qty" placeholder="Qty" min="0" step="0.001" value={qtyStr} onChange={(e) => setQtyStr(e.target.value)} />
       <button className="btn btn-in btn-sm" onClick={() => ledger.reserveItem(it, types, parseFloat(qtyStr))}>
         Reserve
       </button>
