@@ -1,0 +1,417 @@
+"use client";
+
+import { useState } from "react";
+import { useLedger } from "./useLedger";
+import Modals from "./Modals";
+import type { SortKey, StockItem } from "./types";
+import type { Role } from "../lib/api";
+import { fmtNum, formatPacking } from "./utils";
+
+export type LedgerApi = ReturnType<typeof useLedger>;
+
+export default function Ledger({ role }: { role: Role }) {
+  const ledger = useLedger();
+  const canEdit = role === "editor";
+
+  if (!ledger.loaded) {
+    return <div style={{ padding: 60, textAlign: "center", color: "var(--ink-soft)" }}>Loading ledger…</div>;
+  }
+
+  const occ = ledger.occupiedLocationCodes;
+  const totalMaterials = ledger.distinctMaterials.length;
+  const occupiedCount = occ.size;
+  const freeCount = ledger.locations.filter((l) => !occ.has(l.code)).length;
+
+  return (
+    <>
+      <Header totalMaterials={totalMaterials} occupiedCount={occupiedCount} freeCount={freeCount} />
+      <Tabs ledger={ledger} />
+      {ledger.tab === "stock" && <StockTab ledger={ledger} canEdit={canEdit} />}
+      {ledger.tab === "locations" && <LocationsTab ledger={ledger} canEdit={canEdit} />}
+      {ledger.tab === "log" && <LogTab ledger={ledger} canEdit={canEdit} />}
+      {canEdit && <Modals ledger={ledger} />}
+      {ledger.toast && <div className="toast">{ledger.toast}</div>}
+    </>
+  );
+}
+
+function Header({ totalMaterials, occupiedCount, freeCount }: { totalMaterials: number; occupiedCount: number; freeCount: number }) {
+  return (
+    <div className="app-header">
+      <div className="brand-mark">
+        <div>
+          <h1>Stock &amp; Location Ledger</h1>
+          <div className="sub">Rawji Fine Fragrances — aroma chemical inventory, by warehouse bin</div>
+        </div>
+      </div>
+      <div className="header-stats">
+        <Stat n={totalMaterials} l="Materials" />
+        <Stat n={occupiedCount} l="Occupied bins" />
+        <Stat n={freeCount} l="Free bins" />
+      </div>
+    </div>
+  );
+}
+
+function Stat({ n, l }: { n: number; l: string }) {
+  return (
+    <div className="stat">
+      <div className="n">{n}</div>
+      <div className="l">{l}</div>
+    </div>
+  );
+}
+
+function Tabs({ ledger }: { ledger: LedgerApi }) {
+  const tabs: Array<{ id: "stock" | "locations" | "log"; label: string; count: number }> = [
+    { id: "stock", label: "Stock", count: ledger.items.length },
+    { id: "locations", label: "Locations", count: ledger.locations.length },
+    { id: "log", label: "Activity", count: ledger.txLog.length },
+  ];
+  return (
+    <div className="tabs">
+      {tabs.map((t) => (
+        <button
+          key={t.id}
+          className={"tab-btn " + (ledger.tab === t.id ? "active" : "")}
+          onClick={() => {
+            ledger.setTab(t.id);
+            ledger.setPage(1);
+          }}
+        >
+          {t.label}
+          <span className="count">{t.count}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function SortArrow({ ledger, sortKey }: { ledger: LedgerApi; sortKey: SortKey }) {
+  if (ledger.sortKey !== sortKey) return null;
+  return <span className="arrow">{ledger.sortDir === "asc" ? "↑" : "↓"}</span>;
+}
+
+function StockTab({ ledger, canEdit }: { ledger: LedgerApi; canEdit: boolean }) {
+  const all = ledger.filteredItems;
+  const total = all.length;
+  const start = (ledger.page - 1) * ledger.pageSize;
+  const pageItems = all.slice(start, start + ledger.pageSize);
+  const maxPage = Math.max(1, Math.ceil(total / ledger.pageSize));
+
+  const columns: Array<{ key: SortKey; label: string }> = [
+    { key: "material", label: "Material" },
+    { key: "packing", label: "Packing" },
+    { key: "batchNo", label: "Batch" },
+    { key: "mfg", label: "Mfg" },
+    { key: "exp", label: "Exp" },
+    { key: "totalStock", label: "Stock" },
+    { key: "location", label: "Bin" },
+    { key: "reservedType", label: "Reserved" },
+  ];
+
+  return (
+    <>
+      <div className="toolbar">
+        <div className="search-wrap">
+          <input
+            type="text"
+            placeholder="Search material, brand, batch no, or bin…"
+            value={ledger.search}
+            onChange={(e) => {
+              ledger.setSearch(e.target.value);
+              ledger.setPage(1);
+            }}
+          />
+        </div>
+        <select
+          value={ledger.locFilter}
+          onChange={(e) => {
+            ledger.setLocFilter(e.target.value as typeof ledger.locFilter);
+            ledger.setPage(1);
+          }}
+        >
+          <option value="all">All stock</option>
+          <option value="assigned">Assigned to a bin</option>
+          <option value="unassigned">Unassigned</option>
+        </select>
+        <select
+          value={ledger.resFilter}
+          onChange={(e) => {
+            ledger.setResFilter(e.target.value as typeof ledger.resFilter);
+            ledger.setPage(1);
+          }}
+        >
+          <option value="all">All reservations</option>
+          <option value="PSS">PSS only</option>
+          <option value="Reservation">Reservation only</option>
+          <option value="unreserved">Unreserved only</option>
+        </select>
+        {canEdit && (
+          <button className="btn btn-primary" onClick={() => ledger.openInModal()}>
+            + New Stock IN
+          </button>
+        )}
+        {canEdit && (
+          <button className="btn btn-ghost" disabled={!ledger.canUndo} onClick={ledger.undoLast}>
+            ↺ Undo last action
+          </button>
+        )}
+        {canEdit && (
+          <button className="btn btn-ghost" onClick={ledger.resetAll}>
+            Reset to original
+          </button>
+        )}
+        <button className="btn btn-ghost" onClick={ledger.exportToExcel}>
+          ⭳ Export to Excel
+        </button>
+      </div>
+      <div className="table-card">
+        <table>
+          <thead>
+            <tr>
+              {columns.map((c) => (
+                <th key={c.key} onClick={() => ledger.toggleSort(c.key)}>
+                  {c.label} <SortArrow ledger={ledger} sortKey={c.key} />
+                </th>
+              ))}
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {pageItems.length === 0 && (
+              <tr>
+                <td colSpan={9}>
+                  <div className="empty-state">
+                    <div className="glyph">∅</div>
+                    No stock rows match this search.
+                  </div>
+                </td>
+              </tr>
+            )}
+            {pageItems.map((it) => (
+              <StockRow key={it.id} it={it} ledger={ledger} canEdit={canEdit} />
+            ))}
+          </tbody>
+        </table>
+        <div className="pager">
+          <div className="info">
+            Showing {total === 0 ? 0 : start + 1}–{Math.min(start + ledger.pageSize, total)} of {total}
+          </div>
+          <div className="controls">
+            <button className="btn btn-sm" disabled={ledger.page <= 1} onClick={() => ledger.setPage(Math.max(1, ledger.page - 1))}>
+              ← Prev
+            </button>
+            <button className="btn btn-sm" disabled={ledger.page >= maxPage} onClick={() => ledger.setPage(ledger.page + 1)}>
+              Next →
+            </button>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function StockRow({ it, ledger, canEdit }: { it: StockItem; ledger: LedgerApi; canEdit: boolean }) {
+  const isOccupied = !!it.location;
+  return (
+    <tr>
+      <td>
+        <div className="mat-name">{it.material}</div>
+        <div className="mat-brand">{it.brand || "—"}</div>
+      </td>
+      <td>
+        <span className="code">{formatPacking(it)}</span>
+      </td>
+      <td>
+        <span className="code">{it.batchNo || "—"}</span>
+      </td>
+      <td>{it.mfg || "—"}</td>
+      <td>{it.exp || "—"}</td>
+      <td className="qty">{fmtNum(it.totalStock)} kg</td>
+      <td>
+        {isOccupied ? <span className="loc-pill occupied">{it.location}</span> : <span className="loc-pill none">unassigned</span>}
+      </td>
+      <td>
+        <ReservationCell it={it} ledger={ledger} canEdit={canEdit} />
+      </td>
+      <td>
+        {canEdit && (
+          <div className="row-actions">
+            {isOccupied && (
+              <button className="btn btn-transfer btn-sm" onClick={() => ledger.openTransferModal(it)}>
+                Transfer
+              </button>
+            )}
+            {isOccupied && (
+              <button className="btn btn-out btn-sm" onClick={() => ledger.openOutModal(it)}>
+                Move OUT
+              </button>
+            )}
+            {!isOccupied && (
+              <button
+                className="btn btn-in btn-sm"
+                onClick={() => ledger.openInModal({ material: it.material, brand: it.brand || "", batchNo: it.batchNo != null ? String(it.batchNo) : "" })}
+              >
+                Assign IN
+              </button>
+            )}
+            <button className="btn btn-ghost btn-sm" title="Edit this row" onClick={() => ledger.openEditModal(it)}>
+              Edit
+            </button>
+            <button className="btn btn-ghost btn-sm" title="Delete this row" style={{ color: "var(--rust)" }} onClick={() => ledger.deleteItem(it)}>
+              Delete
+            </button>
+          </div>
+        )}
+      </td>
+    </tr>
+  );
+}
+
+function ReservationCell({ it, ledger, canEdit }: { it: StockItem; ledger: LedgerApi; canEdit: boolean }) {
+  const [types, setTypes] = useState<string[]>([]);
+  const [qtyStr, setQtyStr] = useState("");
+
+  if (it.reservation) {
+    return (
+      <div className="res-inline">
+        <span className="loc-pill occupied">
+          {it.reservation.type.join(", ")} · {fmtNum(it.reservation.qty)} kg
+        </span>
+        {canEdit && (
+          <button className="btn btn-ghost btn-sm" onClick={() => ledger.unreserveItem(it)}>
+            Unreserve
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  if (!canEdit) return <span className="loc-pill none">unreserved</span>;
+
+  function toggleType(t: string, checked: boolean) {
+    setTypes((prev) => (checked ? [...prev, t] : prev.filter((x) => x !== t)));
+  }
+
+  return (
+    <div className="res-inline">
+      <label className="res-type-chip">
+        <input type="checkbox" checked={types.includes("PSS")} onChange={(e) => toggleType("PSS", e.target.checked)} /> PSS
+      </label>
+      <label className="res-type-chip">
+        <input type="checkbox" checked={types.includes("Reservation")} onChange={(e) => toggleType("Reservation", e.target.checked)} /> Resv.
+      </label>
+      <input type="number" className="res-qty" placeholder="Qty" min="0" step="0.001" value={qtyStr} onChange={(e) => setQtyStr(e.target.value)} />
+      <button className="btn btn-in btn-sm" onClick={() => ledger.reserveItem(it, types, parseFloat(qtyStr))}>
+        Reserve
+      </button>
+    </div>
+  );
+}
+
+function LocationsTab({ ledger, canEdit }: { ledger: LedgerApi; canEdit: boolean }) {
+  const occ = ledger.occupiedLocationCodes;
+  const zones: Record<string, { code: string }[]> = {};
+  ledger.locations
+    .slice()
+    .sort((a, b) => a.code.localeCompare(b.code))
+    .forEach((l) => {
+      const zone = l.code.split("-")[0] || "Other";
+      (zones[zone] ??= []).push(l);
+    });
+
+  return (
+    <>
+      <div className="assumption-note">
+        <b>How bins work here:</b> a bin is &quot;Occupied&quot; whenever any stock row currently points to it, and
+        &quot;Free&quot; the moment its last stock is moved OUT. New stock can only be assigned IN to a Free bin.
+      </div>
+      {Object.keys(zones)
+        .sort()
+        .map((zone) => (
+          <div className="zone-block" key={zone}>
+            <div className="zone-title">Zone {zone}</div>
+            <div className="loc-grid">
+              {zones[zone].map((l) => {
+                const occupants = ledger.locationOccupants(l.code);
+                const isOcc = occ.has(l.code);
+                const fillText = isOcc
+                  ? occupants.map((o) => o.material).slice(0, 2).join(", ") + (occupants.length > 2 ? " +" + (occupants.length - 2) + " more" : "")
+                  : "Ready for new stock";
+                return (
+                  <div className={"loc-card " + (isOcc ? "occupied" : "free")} key={l.code}>
+                    <div className="badge">{isOcc ? "Occupied" : "Free"}</div>
+                    <div className="code-lg">{l.code}</div>
+                    <div className="fill">{fillText}</div>
+                    {!isOcc && canEdit && (
+                      <button className="btn btn-in btn-sm" onClick={() => ledger.openInModal({ location: l.code })}>
+                        Assign stock IN
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+    </>
+  );
+}
+
+function LogTab({ ledger, canEdit }: { ledger: LedgerApi; canEdit: boolean }) {
+  return (
+    <>
+      <div className="toolbar">
+        <div style={{ flex: 1, color: "var(--ink-soft)", fontSize: 12 }}>
+          Undo steps back through the most recent mutating actions, most recent first.
+        </div>
+        {canEdit && (
+          <button className="btn btn-ghost" disabled={!ledger.canUndo} onClick={ledger.undoLast}>
+            ↺ Undo last action
+          </button>
+        )}
+      </div>
+      {ledger.txLog.length === 0 ? (
+        <div className="table-card">
+          <div className="empty-state">
+            <div className="glyph">∅</div>
+            No IN/OUT activity recorded yet in this app.
+          </div>
+        </div>
+      ) : (
+        <div className="table-card">
+          {ledger.txLog.map((tx) => {
+            const d = new Date(tx.ts);
+            const when = isNaN(d.getTime()) ? "" : d.toLocaleString();
+            const locPart =
+              tx.type === "TRANSFER" ? (
+                <>
+                  {" "}
+                  — bin <b>{tx.fromLocation || "—"}</b> → <b>{tx.toLocation || "—"}</b>
+                </>
+              ) : tx.location ? (
+                <>
+                  {" "}
+                  — bin <b>{tx.location}</b>
+                </>
+              ) : null;
+            const packingPart = tx.type === "TRANSFER" && tx.packingDetail ? " · packing " + tx.packingDetail : "";
+            return (
+              <div className="log-item" key={tx.id}>
+                <div className={"log-badge " + tx.type}>{tx.type}</div>
+                <div className="log-body">
+                  {tx.material} {tx.batchNo && <span className="code">{tx.batchNo}</span>}
+                  {locPart}
+                  <div className="log-meta">
+                    {fmtNum(tx.qty)} kg{packingPart} · {when}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </>
+  );
+}
