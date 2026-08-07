@@ -6,9 +6,11 @@ import type { PackingRowInput } from "./types";
 export default function PackingRows({
   rows,
   onChange,
+  required = false,
 }: {
   rows: PackingRowInput[];
   onChange: (rows: PackingRowInput[]) => void;
+  required?: boolean;
 }) {
   function update(idx: number, patch: Partial<PackingRowInput>) {
     onChange(rows.map((r, i) => (i === idx ? { ...r, ...patch } : r)));
@@ -31,6 +33,7 @@ export default function PackingRows({
               type="number"
               step="0.001"
               min="0"
+              required={required}
               className="pack-size"
               value={r.size}
               onChange={(e) => update(idx, { size: e.target.value })}
@@ -42,6 +45,7 @@ export default function PackingRows({
               type="number"
               step="1"
               min="1"
+              required={required}
               className="pack-count"
               value={r.count}
               onChange={(e) => update(idx, { count: e.target.value })}

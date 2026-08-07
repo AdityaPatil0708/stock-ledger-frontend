@@ -311,11 +311,19 @@ function ReservationCell({ it, ledger, canEdit }: { it: StockItem; ledger: Ledge
 }
 
 function LocationsTab({ ledger, canEdit }: { ledger: LedgerApi; canEdit: boolean }) {
+  const [search, setSearch] = useState("");
   const occ = ledger.occupiedLocationCodes;
+  const q = search.trim().toLowerCase();
+
   const zones: Record<string, { code: string }[]> = {};
   ledger.locations
     .slice()
     .sort((a, b) => a.code.localeCompare(b.code))
+    .filter((l) => {
+      if (!q) return true;
+      if (l.code.toLowerCase().includes(q)) return true;
+      return ledger.locationOccupants(l.code).some((o) => String(o.material).toLowerCase().includes(q));
+    })
     .forEach((l) => {
       const zone = l.code.split("-")[0] || "Other";
       (zones[zone] ??= []).push(l);
@@ -327,6 +335,37 @@ function LocationsTab({ ledger, canEdit }: { ledger: LedgerApi; canEdit: boolean
         <b>How bins work here:</b> a bin is &quot;Occupied&quot; whenever any stock row currently points to it, and
         &quot;Free&quot; the moment its last stock is moved OUT. New stock can only be assigned IN to a Free bin.
       </div>
+      <div className="toolbar">
+        <div className="search-wrap" style={{ flex: "none", width: 280 }}>
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "var(--ink-soft)", pointerEvents: "none" }}
+          >
+            <circle cx="11" cy="11" r="7" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          <input
+            type="text"
+            placeholder="Search bin code or material…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            style={{ paddingLeft: 32 }}
+          />
+        </div>
+      </div>
+      {Object.keys(zones).length === 0 && (
+        <div className="table-card">
+          <div className="empty-state">
+            <div className="glyph">∅</div>
+            No bins match this search.
+          </div>
+        </div>
+      )}
       {Object.keys(zones)
         .sort()
         .map((zone) => (

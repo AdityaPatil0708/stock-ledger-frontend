@@ -237,9 +237,17 @@ function InModal({
     <div className="modal">
       <h2>New stock IN</h2>
       <div className="modal-sub">Assign new or returning stock to a free bin.</div>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          ledger.confirmIn(form, form.packingRows);
+        }}
+      >
       <div className="field">
-        <label>Material</label>
-        <input type="text" list="material-list" value={form.material} onChange={set("material")} placeholder="e.g. ACETOPHENONE" />
+        <label>
+          Material <span className="required-mark">*</span>
+        </label>
+        <input type="text" required list="material-list" value={form.material} onChange={set("material")} placeholder="e.g. ACETOPHENONE" />
         <datalist id="material-list">
           {distinctMaterials.map((mm) => (
             <option key={mm.material} value={mm.material} />
@@ -248,31 +256,43 @@ function InModal({
       </div>
       <div className="field-row">
         <div className="field">
-          <label>Brand / Supplier</label>
-          <input type="text" value={form.brand} onChange={set("brand")} />
+          <label>
+            Brand / Supplier <span className="required-mark">*</span>
+          </label>
+          <input type="text" required value={form.brand} onChange={set("brand")} />
         </div>
         <div className="field">
-          <label>Batch No</label>
-          <input type="text" value={form.batchNo} onChange={set("batchNo")} />
+          <label>
+            Batch No <span className="required-mark">*</span>
+          </label>
+          <input type="text" required value={form.batchNo} onChange={set("batchNo")} />
         </div>
       </div>
       <div className="field-row">
         <div className="field">
-          <label>Mfg date</label>
-          <input type="text" placeholder="DD.MM.YY" value={form.mfg} onChange={set("mfg")} />
+          <label>
+            Mfg date <span className="required-mark">*</span>
+          </label>
+          <input type="text" required placeholder="DD.MM.YY" value={form.mfg} onChange={set("mfg")} />
         </div>
         <div className="field">
-          <label>Exp date</label>
-          <input type="text" placeholder="DD.MM.YY" value={form.exp} onChange={set("exp")} />
+          <label>
+            Exp date <span className="required-mark">*</span>
+          </label>
+          <input type="text" required placeholder="DD.MM.YY" value={form.exp} onChange={set("exp")} />
         </div>
       </div>
       <div className="field">
-        <label>Packing breakdown</label>
-        <PackingRows rows={form.packingRows} onChange={(packingRows) => setForm({ ...form, packingRows })} />
+        <label>
+          Packing breakdown <span className="required-mark">*</span>
+        </label>
+        <PackingRows rows={form.packingRows} onChange={(packingRows) => setForm({ ...form, packingRows })} required />
       </div>
       <div className="field">
-        <label>Bin / Location</label>
-        <select value={form.location} onChange={set("location")}>
+        <label>
+          Bin / Location <span className="required-mark">*</span>
+        </label>
+        <select required value={form.location} onChange={set("location")}>
           <option value="">Choose a free bin…</option>
           {freeLocations.map((c) => (
             <option key={c} value={c}>
@@ -283,13 +303,14 @@ function InModal({
         <div className="hint">Only bins with no current stock are offered. {freeLocations.length} free right now.</div>
       </div>
       <div className="modal-actions">
-        <button className="btn btn-ghost" onClick={ledger.closeModal}>
+        <button type="button" className="btn btn-ghost" onClick={ledger.closeModal}>
           Cancel
         </button>
-        <button className="btn btn-in" onClick={() => ledger.confirmIn(form, form.packingRows)}>
+        <button type="submit" className="btn btn-in">
           Confirm IN
         </button>
       </div>
+      </form>
     </div>
   );
 }
