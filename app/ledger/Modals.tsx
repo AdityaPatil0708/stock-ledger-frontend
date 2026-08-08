@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import DateField from "./DateField";
 import PackingRows from "./PackingRows";
 import type { LedgerApi } from "./Ledger";
 import type { Modal, StockItem } from "./types";
@@ -88,11 +89,11 @@ function EditModal({ modal, ledger }: { modal: Extract<Modal, { type: "edit" }>;
       <div className="field-row">
         <div className="field">
           <label>Mfg date</label>
-          <input type="text" placeholder="DD.MM.YY" value={form.mfg} onChange={set("mfg")} />
+          <DateField value={form.mfg} onChange={(v) => setForm({ ...form, mfg: v })} />
         </div>
         <div className="field">
           <label>Exp date</label>
-          <input type="text" placeholder="DD.MM.YY" value={form.exp} onChange={set("exp")} />
+          <DateField value={form.exp} onChange={(v) => setForm({ ...form, exp: v })} />
         </div>
       </div>
       <div className="field-row">
@@ -273,13 +274,13 @@ function InModal({
           <label>
             Mfg date <span className="required-mark">*</span>
           </label>
-          <input type="text" required placeholder="DD.MM.YY" value={form.mfg} onChange={set("mfg")} />
+          <DateField required value={form.mfg} onChange={(v) => setForm({ ...form, mfg: v })} />
         </div>
         <div className="field">
           <label>
             Exp date <span className="required-mark">*</span>
           </label>
-          <input type="text" required placeholder="DD.MM.YY" value={form.exp} onChange={set("exp")} />
+          <DateField required value={form.exp} onChange={(v) => setForm({ ...form, exp: v })} />
         </div>
       </div>
       <div className="field">

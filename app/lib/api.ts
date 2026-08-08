@@ -47,7 +47,6 @@ export const authApi = {
 
 export const ledgerApi = {
   get: () => request<{ items: unknown[]; locations: unknown[]; txLog: unknown[] }>("/api/ledger"),
-  reset: () => request<{ ok: true }>("/api/ledger/reset", { method: "POST" }),
   undo: () => request<{ ok: true }>("/api/ledger/undo", { method: "POST" }),
   stockIn: (form: unknown) => request<{ item: unknown }>("/api/ledger/in", { method: "POST", body: JSON.stringify(form) }),
   stockOut: (id: string, qty: number) =>

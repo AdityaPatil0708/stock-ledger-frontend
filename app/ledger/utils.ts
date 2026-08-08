@@ -32,3 +32,8 @@ export function computePackingTotal(rows: PackingRowInput[]): number {
 export function round3(n: number): number {
   return Math.round(n * 1000) / 1000;
 }
+
+export function floorOf(code: string): string {
+  const m = code.match(/^(GF|F\d+)/i);
+  return m ? m[1].toUpperCase() : "Other";
+}

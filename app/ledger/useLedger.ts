@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ApiError, ledgerApi } from "../lib/api";
 import type { LocationRow, LocFilter, Modal, PackingRowInput, ResFilter, SortKey, StockItem, Tab, TxLogEntry } from "./types";
-import { fmtNum, formatPacking } from "./utils";
+import { fmtNum, floorOf, formatPacking } from "./utils";
 
 export function useLedger() {
   const [loaded, setLoaded] = useState(false);
@@ -15,6 +15,7 @@ export function useLedger() {
   const [tab, setTab] = useState<Tab>("stock");
   const [search, setSearch] = useState("");
   const [locFilter, setLocFilter] = useState<LocFilter>("all");
+  const [floorFilter, setFloorFilter] = useState<string>("all");
   const [resFilter, setResFilter] = useState<ResFilter>("all");
   const [sortKey, setSortKey] = useState<SortKey>("material");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
@@ -82,6 +83,10 @@ export function useLedger() {
     return locations.map((l) => l.code).filter((c) => !occupiedLocationCodes.has(c)).sort();
   }, [locations, occupiedLocationCodes]);
 
+  const floors = useMemo(() => {
+    return Array.from(new Set(locations.map((l) => floorOf(l.code)))).sort();
+  }, [locations]);
+
   const distinctMaterials = useMemo(() => {
     const m = new Map<string, StockItem>();
     items.forEach((it) => {
@@ -102,6 +107,7 @@ export function useLedger() {
     }
     if (locFilter === "assigned") list = list.filter((it) => !!it.location);
     if (locFilter === "unassigned") list = list.filter((it) => !it.location);
+    if (floorFilter !== "all") list = list.filter((it) => !!it.location && floorOf(it.location) === floorFilter);
     if (resFilter === "PSS" || resFilter === "Reservation")
       list = list.filter((it) => it.reservation && it.reservation.type.includes(resFilter));
     if (resFilter === "unreserved") list = list.filter((it) => !it.reservation);
@@ -127,7 +133,7 @@ export function useLedger() {
       return 0;
     });
     return list;
-  }, [items, search, locFilter, resFilter, sortKey, sortDir]);
+  }, [items, search, locFilter, floorFilter, resFilter, sortKey, sortDir]);
 
   const toggleSort = useCallback((key: SortKey) => {
     setSortKey((prevKey) => {
@@ -250,11 +256,6 @@ export function useLedger() {
     [runAction],
   );
 
-  const resetAll = useCallback(() => {
-    if (!confirm("Reset the ledger back to the original imported sheet? This clears all IN/OUT changes and the activity log made in this app.")) return;
-    runAction(() => ledgerApi.reset(), "Ledger reset to original import.");
-  }, [runAction]);
-
   const undoLast = useCallback(() => runAction(() => ledgerApi.undo(), "Last action undone."), [runAction]);
 
   const exportToExcel = useCallback(() => {
@@ -305,6 +306,9 @@ export function useLedger() {
     setSearch,
     locFilter,
     setLocFilter,
+    floorFilter,
+    setFloorFilter,
+    floors,
     resFilter,
     setResFilter,
     sortKey,
@@ -334,7 +338,6 @@ export function useLedger() {
     confirmTransfer,
     confirmEdit,
     deleteItem,
-    resetAll,
     exportToExcel,
     undoLast,
   };

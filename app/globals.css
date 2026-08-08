@@ -148,8 +148,17 @@ body {
   flex: 1;
   min-width: 240px;
 }
-.search-wrap input {
+.search-wrap input[type="text"] {
   width: 100%;
+  padding-left: 28px;
+}
+.search-icon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--ink-soft);
+  pointer-events: none;
 }
 input[type="text"],
 input[type="number"],
@@ -506,6 +515,81 @@ tbody tr:hover {
   color: var(--ink-soft);
   font-size: 12.5px;
   margin-bottom: 16px;
+}
+.date-field {
+  position: relative;
+}
+.date-field input {
+  width: 100%;
+  cursor: pointer;
+}
+.date-field input:disabled {
+  background: var(--paper-2);
+  color: var(--ink-soft);
+  cursor: not-allowed;
+}
+.date-calendar {
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  padding: 8px;
+  background: var(--card);
+  box-sizing: border-box;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+.date-calendar-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.date-calendar-head button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--ink-soft);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.date-calendar-head button:hover {
+  background: var(--paper-2);
+}
+.date-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+.date-calendar-dow span {
+  text-align: center;
+  font-size: 10px;
+  color: var(--ink-soft);
+  padding: 2px 0;
+}
+.date-cell {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: none;
+  border-radius: 6px;
+  font-size: 11px;
+  cursor: pointer;
+  color: var(--ink);
+  width: 100%;
+}
+.date-cell:hover {
+  background: var(--paper-2);
+}
+.date-cell.is-today {
+  border: 1px solid var(--amber-deep);
+}
+.date-cell.is-selected {
+  background: var(--amber-deep);
+  color: #fff;
 }
 .field {
   margin-bottom: 12px;

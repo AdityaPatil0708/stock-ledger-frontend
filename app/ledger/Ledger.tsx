@@ -114,6 +114,10 @@ function StockTab({ ledger, canEdit }: { ledger: LedgerApi; canEdit: boolean }) 
     <>
       <div className="toolbar">
         <div className="search-wrap">
+          <svg className="search-icon" width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="6.5" cy="6.5" r="5" stroke="currentColor" strokeWidth="1.5" />
+            <path d="M10.5 10.5l3.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+          </svg>
           <input
             type="text"
             placeholder="Search material, brand, batch no, or bin…"
@@ -157,11 +161,20 @@ function StockTab({ ledger, canEdit }: { ledger: LedgerApi; canEdit: boolean }) 
             ↺ Undo last action
           </button>
         )}
-        {canEdit && (
-          <button className="btn btn-ghost" onClick={ledger.resetAll}>
-            Reset to original
-          </button>
-        )}
+        <select
+          value={ledger.floorFilter}
+          onChange={(e) => {
+            ledger.setFloorFilter(e.target.value);
+            ledger.setPage(1);
+          }}
+        >
+          <option value="all">All floors</option>
+          {ledger.floors.map((f) => (
+            <option key={f} value={f}>
+              {f}
+            </option>
+          ))}
+        </select>
         <button className="btn btn-ghost" onClick={ledger.exportToExcel}>
           Export to Excel
         </button>
