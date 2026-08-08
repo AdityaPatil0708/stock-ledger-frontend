@@ -8,7 +8,7 @@ import type { Modal, StockItem } from "./types";
 import { fmtNum } from "./utils";
 
 export default function Modals({ ledger }: { ledger: LedgerApi }) {
-  const { modal, closeModal, freeLocations, distinctMaterials } = ledger;
+  const { modal, closeModal, allLocations, distinctMaterials } = ledger;
   if (!modal) return null;
 
   return (
@@ -21,7 +21,7 @@ export default function Modals({ ledger }: { ledger: LedgerApi }) {
       {modal.type === "out" && <OutModal modal={modal} ledger={ledger} />}
       {modal.type === "edit" && <EditModal modal={modal} ledger={ledger} />}
       {modal.type === "transfer" && <TransferModal modal={modal} ledger={ledger} />}
-      {modal.type === "in" && <InModal modal={modal} ledger={ledger} freeLocations={freeLocations} distinctMaterials={distinctMaterials} />}
+      {modal.type === "in" && <InModal modal={modal} ledger={ledger} allLocations={allLocations} distinctMaterials={distinctMaterials} />}
     </div>
   );
 }
@@ -139,7 +139,7 @@ function TransferModal({ modal, ledger }: { modal: Extract<Modal, { type: "trans
   const [form, setForm] = useState(modal.form);
   const set = (k: "material" | "brand" | "location") => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setForm({ ...form, [k]: e.target.value });
-  const free = ledger.freeLocations.filter((c) => c !== source.location);
+  const destinations = ledger.allLocations.filter((c) => c !== source.location);
 
   return (
     <div className="modal">
@@ -194,8 +194,8 @@ function TransferModal({ modal, ledger }: { modal: Extract<Modal, { type: "trans
           Transfer to bin <span className="required-mark">*</span>
         </label>
         <select value={form.location} onChange={set("location")}>
-          <option value="">Choose a free bin…</option>
-          {free.map((c) => (
+          <option value="">Choose a bin…</option>
+          {destinations.map((c) => (
             <option key={c} value={c}>
               {c}
             </option>
@@ -221,12 +221,12 @@ function TransferModal({ modal, ledger }: { modal: Extract<Modal, { type: "trans
 function InModal({
   modal,
   ledger,
-  freeLocations,
+  allLocations,
   distinctMaterials,
 }: {
   modal: Extract<Modal, { type: "in" }>;
   ledger: LedgerApi;
-  freeLocations: string[];
+  allLocations: string[];
   distinctMaterials: StockItem[];
 }) {
   const [form, setForm] = useState(modal.form);
@@ -237,7 +237,7 @@ function InModal({
   return (
     <div className="modal">
       <h2>New stock IN</h2>
-      <div className="modal-sub">Assign new or returning stock to a free bin.</div>
+      <div className="modal-sub">Assign new or returning stock to a bin.</div>
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -294,14 +294,14 @@ function InModal({
           Bin / Location <span className="required-mark">*</span>
         </label>
         <select required value={form.location} onChange={set("location")}>
-          <option value="">Choose a free bin…</option>
-          {freeLocations.map((c) => (
+          <option value="">Choose a bin…</option>
+          {allLocations.map((c) => (
             <option key={c} value={c}>
               {c}
             </option>
           ))}
         </select>
-        <div className="hint">Only bins with no current stock are offered. {freeLocations.length} free right now.</div>
+        <div className="hint">All {allLocations.length} bins are available — occupied or not.</div>
       </div>
       <div className="modal-actions">
         <button type="button" className="btn btn-ghost" onClick={ledger.closeModal}>

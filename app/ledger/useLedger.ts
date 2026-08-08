@@ -79,9 +79,9 @@ export function useLedger() {
 
   const locationOccupants = useCallback((code: string) => items.filter((it) => it.location === code), [items]);
 
-  const freeLocations = useMemo(() => {
-    return locations.map((l) => l.code).filter((c) => !occupiedLocationCodes.has(c)).sort();
-  }, [locations, occupiedLocationCodes]);
+  const allLocations = useMemo(() => {
+    return locations.map((l) => l.code).sort();
+  }, [locations]);
 
   const floors = useMemo(() => {
     return Array.from(new Set(locations.map((l) => floorOf(l.code)))).sort();
@@ -323,7 +323,7 @@ export function useLedger() {
     canUndo,
     occupiedLocationCodes,
     locationOccupants,
-    freeLocations,
+    allLocations,
     distinctMaterials,
     filteredItems,
     openOutModal,

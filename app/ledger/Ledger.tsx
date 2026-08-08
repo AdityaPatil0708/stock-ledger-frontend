@@ -346,7 +346,7 @@ function LocationsTab({ ledger, canEdit }: { ledger: LedgerApi; canEdit: boolean
     <>
       <div className="assumption-note">
         <b>How bins work here:</b> a bin is &quot;Occupied&quot; whenever any stock row currently points to it, and
-        &quot;Free&quot; the moment its last stock is moved OUT. New stock can only be assigned IN to a Free bin.
+        &quot;Free&quot; the moment its last stock is moved OUT. New stock can be assigned IN to any bin, occupied or not.
       </div>
       <div className="toolbar">
         <div className="search-wrap" style={{ flex: "none", width: 280 }}>
@@ -396,7 +396,7 @@ function LocationsTab({ ledger, canEdit }: { ledger: LedgerApi; canEdit: boolean
                     <div className="badge">{isOcc ? "Occupied" : "Free"}</div>
                     <div className="code-lg">{l.code}</div>
                     <div className="fill">{fillText}</div>
-                    {!isOcc && canEdit && (
+                    {canEdit && (
                       <button className="btn btn-in btn-sm" onClick={() => ledger.openInModal({ location: l.code })}>
                         Assign stock IN
                       </button>
