@@ -23,15 +23,19 @@ function Calendar({
   selected,
   onSelect,
   style,
+  calendarRef,
 }: {
   selected: Date | null;
   onSelect: (d: Date) => void;
   style?: React.CSSProperties;
+  calendarRef?: React.Ref<HTMLDivElement>;
 }) {
   const base = selected || new Date();
   const [viewYear, setViewYear] = useState(base.getFullYear());
   const [viewMonth, setViewMonth] = useState(base.getMonth());
   const today = new Date();
+  const currentYear = today.getFullYear();
+  const years = Array.from({ length: 6 }, (_, i) => currentYear - 5 + i);
 
   const prevMonth = () => {
     if (viewMonth === 0) { setViewYear((y) => y - 1); setViewMonth(11); } else setViewMonth((m) => m - 1);
@@ -49,10 +53,13 @@ function Calendar({
   while (cells.length % 7 !== 0) cells.push(null);
 
   return (
-    <div className="date-calendar" style={style}>
+    <div className="date-calendar" style={style} ref={calendarRef}>
       <div className="date-calendar-head">
         <button type="button" onClick={prevMonth}>‹</button>
-        <span>{MONTHS[viewMonth]} {viewYear}</span>
+        <span>{MONTHS[viewMonth]}</span>
+        <select value={viewYear} onChange={(e) => setViewYear(Number(e.target.value))}>
+          {years.map((y) => <option key={y} value={y}>{y}</option>)}
+        </select>
         <button type="button" onClick={nextMonth}>›</button>
       </div>
       <div className="date-calendar-grid date-calendar-dow">
@@ -99,6 +106,7 @@ export default function DateField({
   const [pos, setPos] = useState({ top: 0, left: 0 });
   const wrapRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const calendarRef = useRef<HTMLDivElement>(null);
 
   useLayoutEffect(() => {
     if (!open || !inputRef.current) return;
@@ -112,6 +120,7 @@ export default function DateField({
     const onDocPointer = (e: MouseEvent) => {
       const target = e.target as Node;
       if (wrapRef.current?.contains(target)) return;
+      if (calendarRef.current?.contains(target)) return;
       setOpen(false);
     };
     document.addEventListener("mousedown", onDocPointer);
@@ -134,6 +143,7 @@ export default function DateField({
         !disabled &&
         createPortal(
           <Calendar
+            calendarRef={calendarRef}
             selected={parseISO(value)}
             onSelect={(d) => {
               onChange(isoDate(d));
