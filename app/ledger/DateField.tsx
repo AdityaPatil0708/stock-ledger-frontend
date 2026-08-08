@@ -35,7 +35,7 @@ function Calendar({
   const [viewMonth, setViewMonth] = useState(base.getMonth());
   const today = new Date();
   const currentYear = today.getFullYear();
-  const years = Array.from({ length: 6 }, (_, i) => currentYear - 5 + i);
+  const years = Array.from({ length: 21 }, (_, i) => currentYear - 10 + i);
 
   const prevMonth = () => {
     if (viewMonth === 0) { setViewYear((y) => y - 1); setViewMonth(11); } else setViewMonth((m) => m - 1);
@@ -57,7 +57,11 @@ function Calendar({
       <div className="date-calendar-head">
         <button type="button" onClick={prevMonth}>‹</button>
         <span>{MONTHS[viewMonth]}</span>
-        <select value={viewYear} onChange={(e) => setViewYear(Number(e.target.value))}>
+        <select
+          className="date-calendar-year"
+          value={viewYear}
+          onChange={(e) => setViewYear(Number(e.target.value))}
+        >
           {years.map((y) => <option key={y} value={y}>{y}</option>)}
         </select>
         <button type="button" onClick={nextMonth}>›</button>
