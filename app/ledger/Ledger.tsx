@@ -328,18 +328,13 @@ function LocationsTab({ ledger, canEdit }: { ledger: LedgerApi; canEdit: boolean
   const occ = ledger.occupiedLocationCodes;
   const q = search.trim().toLowerCase();
 
-  const zones: Record<string, { code: string }[]> = {};
-  ledger.locations
+  const filteredLocations = ledger.locations
     .slice()
     .sort((a, b) => a.code.localeCompare(b.code))
     .filter((l) => {
       if (!q) return true;
       if (l.code.toLowerCase().includes(q)) return true;
       return ledger.locationOccupants(l.code).some((o) => String(o.material).toLowerCase().includes(q));
-    })
-    .forEach((l) => {
-      const zone = l.code.split("-")[0] || "Other";
-      (zones[zone] ??= []).push(l);
     });
 
   return (
@@ -371,7 +366,7 @@ function LocationsTab({ ledger, canEdit }: { ledger: LedgerApi; canEdit: boolean
           />
         </div>
       </div>
-      {Object.keys(zones).length === 0 && (
+      {filteredLocations.length === 0 && (
         <div className="table-card">
           <div className="empty-state">
             <div className="glyph">∅</div>
@@ -379,34 +374,27 @@ function LocationsTab({ ledger, canEdit }: { ledger: LedgerApi; canEdit: boolean
           </div>
         </div>
       )}
-      {Object.keys(zones)
-        .sort()
-        .map((zone) => (
-          <div className="zone-block" key={zone}>
-            <div className="zone-title">Zone {zone}</div>
-            <div className="loc-grid">
-              {zones[zone].map((l) => {
-                const occupants = ledger.locationOccupants(l.code);
-                const isOcc = occ.has(l.code);
-                const fillText = isOcc
-                  ? occupants.map((o) => o.material).slice(0, 2).join(", ") + (occupants.length > 2 ? " +" + (occupants.length - 2) + " more" : "")
-                  : "Ready for new stock";
-                return (
-                  <div className={"loc-card " + (isOcc ? "occupied" : "free")} key={l.code}>
-                    <div className="badge">{isOcc ? "Occupied" : "Free"}</div>
-                    <div className="code-lg">{l.code}</div>
-                    <div className="fill">{fillText}</div>
-                    {canEdit && (
-                      <button className="btn btn-in btn-sm" onClick={() => ledger.openInModal({ location: l.code })}>
-                        Assign stock IN
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
+      <div className="loc-grid">
+        {filteredLocations.map((l) => {
+          const occupants = ledger.locationOccupants(l.code);
+          const isOcc = occ.has(l.code);
+          const fillText = isOcc
+            ? occupants.map((o) => o.material).slice(0, 2).join(", ") + (occupants.length > 2 ? " +" + (occupants.length - 2) + " more" : "")
+            : "Ready for new stock";
+          return (
+            <div className={"loc-card " + (isOcc ? "occupied" : "free")} key={l.code}>
+              <div className="badge">{isOcc ? "Occupied" : "Free"}</div>
+              <div className="code-lg">{l.code}</div>
+              <div className="fill">{fillText}</div>
+              {canEdit && (
+                <button className="btn btn-in btn-sm" onClick={() => ledger.openInModal({ location: l.code })}>
+                  Assign stock IN
+                </button>
+              )}
             </div>
-          </div>
-        ))}
+          );
+        })}
+      </div>
     </>
   );
 }

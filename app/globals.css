@@ -430,7 +430,7 @@ tbody tr:hover {
 }
 .loc-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  grid-template-columns: repeat(6, 1fr);
   gap: 10px;
 }
 .loc-card {
@@ -442,6 +442,13 @@ tbody tr:hover {
   cursor: default;
   position: relative;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.loc-card .btn {
+  margin-top: auto;
+  padding-top: 5px;
+  align-self: flex-start;
 }
 .loc-card.occupied {
   border-color: var(--line-strong);
@@ -458,6 +465,7 @@ tbody tr:hover {
   font-size: 11px;
   color: var(--ink-soft);
   margin-top: 4px;
+  margin-bottom: 4px;
   min-height: 14px;
 }
 .loc-card .badge {
