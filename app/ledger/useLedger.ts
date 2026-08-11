@@ -25,6 +25,8 @@ export function useLedger() {
   const [toast, setToast] = useState<string | null>(null);
 
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchRef = useRef(search);
+  searchRef.current = search;
 
   const showToast = useCallback((msg: string) => {
     setToast(msg);
@@ -33,20 +35,27 @@ export function useLedger() {
   }, []);
 
   const refresh = useCallback(async () => {
-    const data = await ledgerApi.get();
+    const data = await ledgerApi.get(searchRef.current);
     setItems(data.items as StockItem[]);
     setLocations(data.locations as LocationRow[]);
     setTxLog(data.txLog as TxLogEntry[]);
     setCanUndo(Boolean((data as unknown as { canUndo?: boolean }).canUndo));
   }, []);
 
-  // One-shot fetch of ledger state from the API on mount.
+  // Fetch ledger state from the API on mount, then re-fetch (debounced) whenever search changes.
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
-    refresh()
-      .catch(() => showToast("Could not load the ledger from the server."))
-      .finally(() => setLoaded(true));
-  }, [refresh, showToast]);
+    const t = setTimeout(
+      () => {
+        refresh()
+          .catch(() => showToast("Could not load the ledger from the server."))
+          .finally(() => setLoaded(true));
+      },
+      loaded ? 300 : 0,
+    );
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
   const runAction = useCallback(
@@ -97,14 +106,6 @@ export function useLedger() {
 
   const filteredItems = useMemo(() => {
     let list = items;
-    const q = search.trim().toLowerCase();
-    if (q) {
-      list = list.filter((it) =>
-        [it.material, it.brand, it.batchNo, it.tally, it.location, it.article, it.packingDetail, it.packing].some(
-          (f) => f !== null && f !== undefined && String(f).toLowerCase().includes(q),
-        ),
-      );
-    }
     if (locFilter === "assigned") list = list.filter((it) => !!it.location);
     if (locFilter === "unassigned") list = list.filter((it) => !it.location);
     if (floorFilter !== "all") list = list.filter((it) => !!it.location && floorOf(it.location) === floorFilter);
@@ -133,7 +134,7 @@ export function useLedger() {
       return 0;
     });
     return list;
-  }, [items, search, locFilter, floorFilter, resFilter, sortKey, sortDir]);
+  }, [items, locFilter, floorFilter, resFilter, sortKey, sortDir]);
 
   const toggleSort = useCallback((key: SortKey) => {
     setSortKey((prevKey) => {

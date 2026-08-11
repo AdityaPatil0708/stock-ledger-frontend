@@ -46,7 +46,10 @@ export const authApi = {
 };
 
 export const ledgerApi = {
-  get: () => request<{ items: unknown[]; locations: unknown[]; txLog: unknown[] }>("/api/ledger"),
+  get: (search?: string) =>
+    request<{ items: unknown[]; locations: unknown[]; txLog: unknown[] }>(
+      `/api/ledger${search ? `?search=${encodeURIComponent(search)}` : ""}`,
+    ),
   undo: () => request<{ ok: true }>("/api/ledger/undo", { method: "POST" }),
   stockIn: (form: unknown) => request<{ item: unknown }>("/api/ledger/in", { method: "POST", body: JSON.stringify(form) }),
   stockOut: (id: string, qty: number) =>
