@@ -52,6 +52,7 @@ export const ledgerApi = {
     ),
   undo: () => request<{ ok: true }>("/api/ledger/undo", { method: "POST" }),
   stockIn: (form: unknown) => request<{ item: unknown }>("/api/ledger/in", { method: "POST", body: JSON.stringify(form) }),
+  produce: (form: unknown) => request<{ item: unknown }>("/api/ledger/produce", { method: "POST", body: JSON.stringify(form) }),
   stockOut: (id: string, qty: number) =>
     request<{ item: unknown }>(`/api/ledger/items/${id}/out`, { method: "POST", body: JSON.stringify({ qty }) }),
   transfer: (id: string, form: unknown) =>

@@ -26,7 +26,7 @@ export type StockItem = StockRow & {
 
 export type LocationRow = { code: string };
 
-export type TxType = "IN" | "OUT" | "TRANSFER" | "EDIT" | "DELETE" | "RESERVE" | "UNRESERVE";
+export type TxType = "IN" | "OUT" | "TRANSFER" | "EDIT" | "DELETE" | "RESERVE" | "UNRESERVE" | "PRODUCE";
 
 export type TxLogEntry = {
   id: string;
@@ -41,9 +41,12 @@ export type TxLogEntry = {
   packingDetail?: string | null;
   qty: number;
   resType?: string;
+  note?: string | null;
+  recipe?: string | null;
 };
 
 export type PackingRowInput = { size: string; count: string };
+export type IngredientRowInput = { itemId: string; qty: string };
 
 export type SortKey =
   | "material"
@@ -99,5 +102,17 @@ export type Modal =
         packingDetail: string;
         totalStock: string;
         location: string;
+      };
+    }
+  | {
+      type: "produce";
+      form: {
+        outputMaterial: string;
+        outputBrand: string;
+        outputBatchNo: string;
+        outputMfg: string;
+        outputExp: string;
+        outputLocation: string;
+        ingredients: IngredientRowInput[];
       };
     };

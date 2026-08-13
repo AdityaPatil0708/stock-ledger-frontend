@@ -15,6 +15,8 @@
   --rust-tint: #f5e1da;
   --steel: #3b6e8f;
   --steel-tint: #dce8ee;
+  --plum: #6b4c7a;
+  --plum-tint: #eae1ee;
   --shadow: 0 1px 2px rgba(38, 33, 27, 0.06), 0 6px 20px rgba(38, 33, 27, 0.05);
 }
 * {
@@ -230,6 +232,14 @@ input[type="date"]:focus {
 }
 .btn-transfer:hover {
   background: #2e5872;
+}
+.btn-produce {
+  background: var(--plum);
+  color: #fff;
+  border-color: var(--plum);
+}
+.btn-produce:hover {
+  background: #563d62;
 }
 .btn-ghost {
   background: var(--paper-2);
@@ -688,6 +698,10 @@ tbody tr:hover {
 .log-badge.DELETE {
   background: var(--rust-tint);
   color: var(--rust);
+}
+.log-badge.PRODUCE {
+  background: var(--plum-tint);
+  color: var(--plum);
 }
 .field .required-mark {
   color: var(--rust);

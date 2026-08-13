@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ApiError, ledgerApi } from "../lib/api";
-import type { LocationRow, LocFilter, Modal, PackingRowInput, ResFilter, SortKey, StockItem, Tab, TxLogEntry } from "./types";
+import type { IngredientRowInput, LocationRow, LocFilter, Modal, PackingRowInput, ResFilter, SortKey, StockItem, Tab, TxLogEntry } from "./types";
 import { fmtNum, floorOf, formatPacking } from "./utils";
 
 export function useLedger() {
@@ -193,6 +193,21 @@ export function useLedger() {
       }),
     [],
   );
+  const openProduceModal = useCallback((item?: StockItem) => {
+    setModal({
+      type: "produce",
+      form: {
+        outputMaterial: "",
+        outputBrand: "",
+        outputBatchNo: "",
+        outputMfg: "",
+        outputExp: "",
+        outputLocation: "",
+        ingredients: [{ itemId: item ? item.id : "", qty: "" }],
+      },
+    });
+  }, []);
+
   const closeModal = useCallback(() => setModal(null), []);
 
   const reserveItem = useCallback(
@@ -216,6 +231,25 @@ export function useLedger() {
     async (form: { material: string; brand: string; batchNo: string; mfg: string; exp: string; location: string }, packingRows: PackingRowInput[]) => {
       if (!modal || modal.type !== "in") return;
       const ok = await runAction(() => ledgerApi.stockIn({ ...form, packingRows }), "New stock recorded.");
+      if (ok) closeModal();
+    },
+    [modal, runAction, closeModal],
+  );
+
+  const confirmProduce = useCallback(
+    async (
+      form: {
+        outputMaterial: string;
+        outputBrand: string;
+        outputBatchNo: string;
+        outputMfg: string;
+        outputExp: string;
+        outputLocation: string;
+      },
+      ingredients: IngredientRowInput[],
+    ) => {
+      if (!modal || modal.type !== "produce") return;
+      const ok = await runAction(() => ledgerApi.produce({ ...form, ingredients }), "Compound produced.");
       if (ok) closeModal();
     },
     [modal, runAction, closeModal],
@@ -331,6 +365,7 @@ export function useLedger() {
     openInModal,
     openTransferModal,
     openEditModal,
+    openProduceModal,
     closeModal,
     reserveItem,
     unreserveItem,
@@ -338,6 +373,7 @@ export function useLedger() {
     confirmIn,
     confirmTransfer,
     confirmEdit,
+    confirmProduce,
     deleteItem,
     exportToExcel,
     undoLast,

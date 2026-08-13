@@ -3,6 +3,7 @@
 import { useState } from "react";
 import DateField from "./DateField";
 import PackingRows from "./PackingRows";
+import IngredientRows from "./IngredientRows";
 import type { LedgerApi } from "./Ledger";
 import type { Modal, StockItem } from "./types";
 import { fmtNum } from "./utils";
@@ -22,6 +23,7 @@ export default function Modals({ ledger }: { ledger: LedgerApi }) {
       {modal.type === "edit" && <EditModal modal={modal} ledger={ledger} />}
       {modal.type === "transfer" && <TransferModal modal={modal} ledger={ledger} />}
       {modal.type === "in" && <InModal modal={modal} ledger={ledger} allLocations={allLocations} distinctMaterials={distinctMaterials} />}
+      {modal.type === "produce" && <ProduceModal modal={modal} ledger={ledger} allLocations={allLocations} />}
     </div>
   );
 }
@@ -311,6 +313,90 @@ function InModal({
           Confirm IN
         </button>
       </div>
+      </form>
+    </div>
+  );
+}
+
+function ProduceModal({
+  modal,
+  ledger,
+  allLocations,
+}: {
+  modal: Extract<Modal, { type: "produce" }>;
+  ledger: LedgerApi;
+  allLocations: string[];
+}) {
+  const [form, setForm] = useState(modal.form);
+  const set = (k: "outputMaterial" | "outputBrand" | "outputBatchNo" | "outputLocation") => (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+  ) => setForm({ ...form, [k]: e.target.value });
+
+  return (
+    <div className="modal">
+      <h2>Produce a compound</h2>
+      <div className="modal-sub">
+        Consume quantities from one or more existing stock lots to create a new blended/compounded material. Each ingredient is
+        deducted from its original stock (moved OUT); the total becomes new stock IN at the bin you choose.
+      </div>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          ledger.confirmProduce(form, form.ingredients);
+        }}
+      >
+        <div className="field">
+          <label>
+            Output compound name <span className="required-mark">*</span>
+          </label>
+          <input type="text" required value={form.outputMaterial} onChange={set("outputMaterial")} placeholder="e.g. COMPOUND GD" />
+        </div>
+        <div className="field-row">
+          <div className="field">
+            <label>Brand / Made by</label>
+            <input type="text" value={form.outputBrand} onChange={set("outputBrand")} placeholder="e.g. In-house" />
+          </div>
+          <div className="field">
+            <label>Batch No</label>
+            <input type="text" value={form.outputBatchNo} onChange={set("outputBatchNo")} />
+          </div>
+        </div>
+        <div className="field-row">
+          <div className="field">
+            <label>Mfg date</label>
+            <DateField value={form.outputMfg} onChange={(v) => setForm({ ...form, outputMfg: v })} />
+          </div>
+          <div className="field">
+            <label>Exp date</label>
+            <DateField value={form.outputExp} onChange={(v) => setForm({ ...form, outputExp: v })} />
+          </div>
+        </div>
+        <div className="field">
+          <label>Ingredients consumed from original stock</label>
+          <IngredientRows rows={form.ingredients} onChange={(ingredients) => setForm({ ...form, ingredients })} items={ledger.items} />
+        </div>
+        <div className="field">
+          <label>
+            Bin / Location for finished compound <span className="required-mark">*</span>
+          </label>
+          <select required value={form.outputLocation} onChange={set("outputLocation")}>
+            <option value="">Choose a bin…</option>
+            {allLocations.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+          <div className="hint">All {allLocations.length} bins are available — occupied or not.</div>
+        </div>
+        <div className="modal-actions">
+          <button type="button" className="btn btn-ghost" onClick={ledger.closeModal}>
+            Cancel
+          </button>
+          <button type="submit" className="btn btn-produce">
+            Produce Compound
+          </button>
+        </div>
       </form>
     </div>
   );

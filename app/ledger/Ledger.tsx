@@ -157,6 +157,11 @@ function StockTab({ ledger, canEdit }: { ledger: LedgerApi; canEdit: boolean }) 
           </button>
         )}
         {canEdit && (
+          <button className="btn btn-produce" onClick={() => ledger.openProduceModal()}>
+            + Produce Compound
+          </button>
+        )}
+        {canEdit && (
           <button className="btn btn-ghost" disabled={!ledger.canUndo} onClick={ledger.undoLast}>
             ↺ Undo last action
           </button>
@@ -259,6 +264,15 @@ function StockRow({ it, ledger, canEdit }: { it: StockItem; ledger: LedgerApi; c
             {isOccupied && (
               <button className="btn btn-out btn-sm" onClick={() => ledger.openOutModal(it)}>
                 Move OUT
+              </button>
+            )}
+            {isOccupied && (
+              <button
+                className="btn btn-produce btn-sm"
+                title="Use this stock as an ingredient to produce a compound"
+                onClick={() => ledger.openProduceModal(it)}
+              >
+                Produce
               </button>
             )}
             {!isOccupied && (
@@ -400,9 +414,31 @@ function LocationsTab({ ledger, canEdit }: { ledger: LedgerApi; canEdit: boolean
 }
 
 function LogTab({ ledger, canEdit }: { ledger: LedgerApi; canEdit: boolean }) {
+  const [search, setSearch] = useState("");
+  const q = search.trim().toLowerCase();
+  const filteredLog = q
+    ? ledger.txLog.filter((tx) =>
+        [tx.type, tx.material, tx.brand, tx.batchNo, tx.location, tx.fromLocation, tx.toLocation, tx.note, tx.recipe].some(
+          (f) => f !== null && f !== undefined && String(f).toLowerCase().includes(q),
+        ),
+      )
+    : ledger.txLog;
+
   return (
     <>
       <div className="toolbar">
+        <div className="search-wrap" style={{ flex: "none", width: 320 }}>
+          <svg className="search-icon" width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="6.5" cy="6.5" r="5" stroke="currentColor" strokeWidth="1.5" />
+            <path d="M10.5 10.5l3.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+          </svg>
+          <input
+            type="text"
+            placeholder="Search activity…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
         <div style={{ flex: 1, color: "var(--ink-soft)", fontSize: 12 }}>
           Undo steps back through the most recent mutating actions, most recent first.
         </div>
@@ -412,16 +448,16 @@ function LogTab({ ledger, canEdit }: { ledger: LedgerApi; canEdit: boolean }) {
           </button>
         )}
       </div>
-      {ledger.txLog.length === 0 ? (
+      {filteredLog.length === 0 ? (
         <div className="table-card">
           <div className="empty-state">
             <div className="glyph">∅</div>
-            No IN/OUT activity recorded yet in this app.
+            {ledger.txLog.length === 0 ? "No IN/OUT activity recorded yet in this app." : "No activity matches this search."}
           </div>
         </div>
       ) : (
         <div className="table-card">
-          {ledger.txLog.map((tx) => {
+          {filteredLog.map((tx) => {
             const d = new Date(tx.ts);
             const when = isNaN(d.getTime()) ? "" : d.toLocaleString();
             const locPart =
@@ -437,6 +473,7 @@ function LogTab({ ledger, canEdit }: { ledger: LedgerApi; canEdit: boolean }) {
                 </>
               ) : null;
             const packingPart = tx.type === "TRANSFER" && tx.packingDetail ? " · packing " + tx.packingDetail : "";
+            const extraPart = tx.type === "PRODUCE" && tx.recipe ? " · from " + tx.recipe : tx.note ? " · " + tx.note : "";
             return (
               <div className="log-item" key={tx.id}>
                 <div className={"log-badge " + tx.type}>{tx.type}</div>
@@ -444,7 +481,8 @@ function LogTab({ ledger, canEdit }: { ledger: LedgerApi; canEdit: boolean }) {
                   {tx.material} {tx.batchNo && <span className="code">{tx.batchNo}</span>}
                   {locPart}
                   <div className="log-meta">
-                    {fmtNum(tx.qty)} kg{packingPart} · {when}
+                    {fmtNum(tx.qty)} kg{packingPart}
+                    {extraPart} · {when}
                   </div>
                 </div>
               </div>
