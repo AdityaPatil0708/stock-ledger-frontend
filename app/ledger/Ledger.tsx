@@ -424,6 +424,42 @@ function LogTab({ ledger, canEdit }: { ledger: LedgerApi; canEdit: boolean }) {
       )
     : ledger.txLog;
 
+  function exportLogToExcel() {
+    const csvEscape = (v: unknown) => {
+      const s = v === null || v === undefined ? "" : String(v);
+      return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+    };
+    const headers = ["Type", "Material", "Brand", "Batch", "Bin", "From", "To", "Qty (kg)", "Detail", "When"];
+    const lines = [headers.map(csvEscape).join(",")];
+    filteredLog.forEach((tx) => {
+      lines.push(
+        [
+          tx.type,
+          tx.material,
+          tx.brand || "",
+          tx.batchNo || "",
+          tx.location || "",
+          tx.fromLocation || "",
+          tx.toLocation || "",
+          fmtNum(tx.qty),
+          tx.recipe || tx.note || tx.packingDetail || "",
+          tx.ts,
+        ]
+          .map(csvEscape)
+          .join(","),
+      );
+    });
+    const blob = new Blob(["﻿" + lines.join("\r\n")], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "activity_log_" + new Date().toISOString().slice(0, 10) + ".csv";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <>
       <div className="toolbar">
@@ -447,6 +483,9 @@ function LogTab({ ledger, canEdit }: { ledger: LedgerApi; canEdit: boolean }) {
             ↺ Undo last action
           </button>
         )}
+        <button className="btn btn-ghost" onClick={exportLogToExcel}>
+          Export to Excel
+        </button>
       </div>
       {filteredLog.length === 0 ? (
         <div className="table-card">
