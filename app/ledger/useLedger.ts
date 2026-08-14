@@ -14,6 +14,7 @@ export function useLedger() {
 
   const [tab, setTab] = useState<Tab>("stock");
   const [search, setSearch] = useState("");
+  const [logSearch, setLogSearch] = useState("");
   const [locFilter, setLocFilter] = useState<LocFilter>("all");
   const [floorFilter, setFloorFilter] = useState<string>("all");
   const [resFilter, setResFilter] = useState<ResFilter>("all");
@@ -27,6 +28,8 @@ export function useLedger() {
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const searchRef = useRef(search);
   searchRef.current = search;
+  const logSearchRef = useRef(logSearch);
+  logSearchRef.current = logSearch;
 
   const showToast = useCallback((msg: string) => {
     setToast(msg);
@@ -35,14 +38,14 @@ export function useLedger() {
   }, []);
 
   const refresh = useCallback(async () => {
-    const data = await ledgerApi.get(searchRef.current);
+    const data = await ledgerApi.get(searchRef.current, logSearchRef.current);
     setItems(data.items as StockItem[]);
     setLocations(data.locations as LocationRow[]);
     setTxLog(data.txLog as TxLogEntry[]);
     setCanUndo(Boolean((data as unknown as { canUndo?: boolean }).canUndo));
   }, []);
 
-  // Fetch ledger state from the API on mount, then re-fetch (debounced) whenever search changes.
+  // Fetch ledger state from the API on mount, then re-fetch (debounced) whenever search/logSearch changes.
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     const t = setTimeout(
@@ -55,7 +58,7 @@ export function useLedger() {
     );
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search]);
+  }, [search, logSearch]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
   const runAction = useCallback(
@@ -339,6 +342,8 @@ export function useLedger() {
     setTab,
     search,
     setSearch,
+    logSearch,
+    setLogSearch,
     locFilter,
     setLocFilter,
     floorFilter,

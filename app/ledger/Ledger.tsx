@@ -414,15 +414,11 @@ function LocationsTab({ ledger, canEdit }: { ledger: LedgerApi; canEdit: boolean
 }
 
 function LogTab({ ledger, canEdit }: { ledger: LedgerApi; canEdit: boolean }) {
-  const [search, setSearch] = useState("");
-  const q = search.trim().toLowerCase();
-  const filteredLog = q
-    ? ledger.txLog.filter((tx) =>
-        [tx.type, tx.material, tx.brand, tx.batchNo, tx.location, tx.fromLocation, tx.toLocation, tx.note, tx.recipe].some(
-          (f) => f !== null && f !== undefined && String(f).toLowerCase().includes(q),
-        ),
-      )
-    : ledger.txLog;
+  const filteredLog = ledger.txLog;
+  const total = filteredLog.length;
+  const start = (ledger.page - 1) * ledger.pageSize;
+  const pageLog = filteredLog.slice(start, start + ledger.pageSize);
+  const maxPage = Math.max(1, Math.ceil(total / ledger.pageSize));
 
   function exportLogToExcel() {
     const csvEscape = (v: unknown) => {
@@ -471,8 +467,11 @@ function LogTab({ ledger, canEdit }: { ledger: LedgerApi; canEdit: boolean }) {
           <input
             type="text"
             placeholder="Search activity…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            value={ledger.logSearch}
+            onChange={(e) => {
+              ledger.setLogSearch(e.target.value);
+              ledger.setPage(1);
+            }}
           />
         </div>
         <div style={{ flex: 1, color: "var(--ink-soft)", fontSize: 12 }}>
@@ -491,12 +490,12 @@ function LogTab({ ledger, canEdit }: { ledger: LedgerApi; canEdit: boolean }) {
         <div className="table-card">
           <div className="empty-state">
             <div className="glyph">∅</div>
-            {ledger.txLog.length === 0 ? "No IN/OUT activity recorded yet in this app." : "No activity matches this search."}
+            {ledger.logSearch.trim() ? "No activity matches this search." : "No IN/OUT activity recorded yet in this app."}
           </div>
         </div>
       ) : (
         <div className="table-card">
-          {filteredLog.map((tx) => {
+          {pageLog.map((tx) => {
             const d = new Date(tx.ts);
             const when = isNaN(d.getTime()) ? "" : d.toLocaleString();
             const locPart =
@@ -527,6 +526,19 @@ function LogTab({ ledger, canEdit }: { ledger: LedgerApi; canEdit: boolean }) {
               </div>
             );
           })}
+          <div className="pager">
+            <div className="info">
+              Showing {total === 0 ? 0 : start + 1}–{Math.min(start + ledger.pageSize, total)} of {total}
+            </div>
+            <div className="controls">
+              <button className="btn btn-sm" disabled={ledger.page <= 1} onClick={() => ledger.setPage(Math.max(1, ledger.page - 1))}>
+                ← Prev
+              </button>
+              <button className="btn btn-sm" disabled={ledger.page >= maxPage} onClick={() => ledger.setPage(ledger.page + 1)}>
+                Next →
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </>
