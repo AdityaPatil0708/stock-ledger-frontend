@@ -66,4 +66,7 @@ export const ledgerApi = {
   reserve: (id: string, types: string[], qty: number) =>
     request<{ item: unknown }>(`/api/ledger/items/${id}/reserve`, { method: "POST", body: JSON.stringify({ types, qty }) }),
   unreserve: (id: string) => request<{ item: unknown }>(`/api/ledger/items/${id}/unreserve`, { method: "POST" }),
+  order: (id: string, qty: number) =>
+    request<{ item: unknown }>(`/api/ledger/items/${id}/order`, { method: "POST", body: JSON.stringify({ qty }) }),
+  unorder: (id: string) => request<{ item: unknown }>(`/api/ledger/items/${id}/unorder`, { method: "POST" }),
 };

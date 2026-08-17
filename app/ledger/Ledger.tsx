@@ -300,8 +300,13 @@ function ReservationCell({ it, ledger, canEdit }: { it: StockItem; ledger: Ledge
   const [types, setTypes] = useState<string[]>([]);
   const [qtyStr, setQtyStr] = useState("");
 
+  function toggleType(t: string, checked: boolean) {
+    setTypes((prev) => (checked ? [...prev, t] : prev.filter((x) => x !== t)));
+  }
+
+  let reservationPart;
   if (it.reservation) {
-    return (
+    reservationPart = (
       <div className="res-inline">
         <span className="loc-pill occupied">
           {it.reservation.type.join(", ")} · {fmtNum(it.reservation.qty)} kg
@@ -313,25 +318,56 @@ function ReservationCell({ it, ledger, canEdit }: { it: StockItem; ledger: Ledge
         )}
       </div>
     );
-  }
-
-  if (!canEdit) return <span className="loc-pill none">unreserved</span>;
-
-  function toggleType(t: string, checked: boolean) {
-    setTypes((prev) => (checked ? [...prev, t] : prev.filter((x) => x !== t)));
+  } else if (!canEdit) {
+    reservationPart = <span className="loc-pill none">unreserved</span>;
+  } else {
+    reservationPart = (
+      <div className="res-inline">
+        <label className="res-type-chip">
+          <input type="checkbox" checked={types.includes("PSS")} onChange={(e) => toggleType("PSS", e.target.checked)} /> PSS
+        </label>
+        <label className="res-type-chip">
+          <input type="checkbox" checked={types.includes("Reservation")} onChange={(e) => toggleType("Reservation", e.target.checked)} /> Resv.
+        </label>
+        <input type="text" className="res-qty" placeholder="Qty" min="0" step="0.001" value={qtyStr} onChange={(e) => setQtyStr(e.target.value)} />
+        <button className="btn btn-in btn-sm" onClick={() => ledger.reserveItem(it, types, parseFloat(qtyStr))}>
+          Reserve
+        </button>
+      </div>
+    );
   }
 
   return (
+    <>
+      {reservationPart}
+      <InOrderControl it={it} ledger={ledger} canEdit={canEdit} />
+    </>
+  );
+}
+
+function InOrderControl({ it, ledger, canEdit }: { it: StockItem; ledger: LedgerApi; canEdit: boolean }) {
+  const [qtyStr, setQtyStr] = useState("");
+
+  if (it.inOrder) {
+    return (
+      <div className="res-inline">
+        <span className="loc-pill occupied">In Order · {fmtNum(it.inOrder.qty)} kg</span>
+        {canEdit && (
+          <button className="btn btn-ghost btn-sm" onClick={() => ledger.unorderItem(it)}>
+            Clear
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  if (!canEdit) return null;
+
+  return (
     <div className="res-inline">
-      <label className="res-type-chip">
-        <input type="checkbox" checked={types.includes("PSS")} onChange={(e) => toggleType("PSS", e.target.checked)} /> PSS
-      </label>
-      <label className="res-type-chip">
-        <input type="checkbox" checked={types.includes("Reservation")} onChange={(e) => toggleType("Reservation", e.target.checked)} /> Resv.
-      </label>
       <input type="text" className="res-qty" placeholder="Qty" min="0" step="0.001" value={qtyStr} onChange={(e) => setQtyStr(e.target.value)} />
-      <button className="btn btn-in btn-sm" onClick={() => ledger.reserveItem(it, types, parseFloat(qtyStr))}>
-        Reserve
+      <button className="btn btn-transfer btn-sm" onClick={() => ledger.orderItem(it, parseFloat(qtyStr))}>
+        In Order
       </button>
     </div>
   );
@@ -512,9 +548,10 @@ function LogTab({ ledger, canEdit }: { ledger: LedgerApi; canEdit: boolean }) {
               ) : null;
             const packingPart = tx.type === "TRANSFER" && tx.packingDetail ? " · packing " + tx.packingDetail : "";
             const extraPart = tx.type === "PRODUCE" && tx.recipe ? " · from " + tx.recipe : tx.note ? " · " + tx.note : "";
+            const badgeLabel = tx.type === "ORDER" ? "IN ORDER" : tx.type === "UNORDER" ? "ORDER CLEARED" : tx.type;
             return (
               <div className="log-item" key={tx.id}>
-                <div className={"log-badge " + tx.type}>{tx.type}</div>
+                <div className={"log-badge " + tx.type}>{badgeLabel}</div>
                 <div className="log-body">
                   {tx.material} {tx.batchNo && <span className="code">{tx.batchNo}</span>}
                   {locPart}

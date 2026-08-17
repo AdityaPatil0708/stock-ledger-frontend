@@ -221,6 +221,13 @@ export function useLedger() {
 
   const unreserveItem = useCallback((item: StockItem) => runAction(() => ledgerApi.unreserve(item.id), "Reservation cleared."), [runAction]);
 
+  const orderItem = useCallback(
+    (item: StockItem, qty: number) => runAction(() => ledgerApi.order(item.id, qty), "Marked in order."),
+    [runAction],
+  );
+
+  const unorderItem = useCallback((item: StockItem) => runAction(() => ledgerApi.unorder(item.id), "In-order cleared."), [runAction]);
+
   const confirmOut = useCallback(
     async (qty: number) => {
       if (!modal || modal.type !== "out") return;
@@ -374,6 +381,8 @@ export function useLedger() {
     closeModal,
     reserveItem,
     unreserveItem,
+    orderItem,
+    unorderItem,
     confirmOut,
     confirmIn,
     confirmTransfer,

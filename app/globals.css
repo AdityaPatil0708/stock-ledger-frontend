@@ -363,6 +363,7 @@ tbody tr:hover {
   align-items: center;
   gap: 6px;
   flex-wrap: wrap;
+  margin-top: 4px;
 }
 .res-type-chip {
   display: inline-flex;
@@ -702,6 +703,14 @@ tbody tr:hover {
 .log-badge.PRODUCE {
   background: var(--plum-tint);
   color: var(--plum);
+}
+.log-badge.ORDER {
+  background: var(--steel-tint);
+  color: var(--steel);
+}
+.log-badge.UNORDER {
+  background: var(--paper-2);
+  color: var(--ink-soft);
 }
 .field .required-mark {
   color: var(--rust);

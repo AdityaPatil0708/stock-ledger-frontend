@@ -1,4 +1,5 @@
 export type Reservation = { type: string[]; qty: number };
+export type InOrder = { qty: number };
 
 // Source sheet has inconsistent typing per cell (numbers stored as strings and vice versa) —
 // fields below are typed permissively to match the real imported data rather than an idealized shape.
@@ -22,11 +23,12 @@ export type StockRow = {
 export type StockItem = StockRow & {
   id: string;
   reservation?: Reservation | null;
+  inOrder?: InOrder | null;
 };
 
 export type LocationRow = { code: string };
 
-export type TxType = "IN" | "OUT" | "TRANSFER" | "EDIT" | "DELETE" | "RESERVE" | "UNRESERVE" | "PRODUCE";
+export type TxType = "IN" | "OUT" | "TRANSFER" | "EDIT" | "DELETE" | "RESERVE" | "UNRESERVE" | "PRODUCE" | "ORDER" | "UNORDER";
 
 export type TxLogEntry = {
   id: string;
