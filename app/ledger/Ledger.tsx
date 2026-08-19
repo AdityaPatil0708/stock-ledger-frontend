@@ -233,7 +233,15 @@ function StockTab({ ledger, canEdit }: { ledger: LedgerApi; canEdit: boolean }) 
 
 function latestActivityFor(it: StockItem, txLog: TxLogEntry[]): TxLogEntry | null {
   const batch = it.batchNo != null ? String(it.batchNo) : "";
-  return txLog.find((tx) => tx.material === it.material && String(tx.batchNo ?? "") === batch) || null;
+  const loc = it.location || "";
+  return (
+    txLog.find((tx) => {
+      if (tx.material !== it.material) return false;
+      if (String(tx.batchNo ?? "") !== batch) return false;
+      const txLoc = tx.type === "TRANSFER" ? tx.toLocation : tx.location;
+      return (txLoc || "") === loc;
+    }) || null
+  );
 }
 
 function StockRow({ it, ledger, canEdit }: { it: StockItem; ledger: LedgerApi; canEdit: boolean }) {
@@ -408,10 +416,6 @@ function LocationsTab({ ledger, canEdit }: { ledger: LedgerApi; canEdit: boolean
 
   return (
     <>
-      <div className="assumption-note">
-        <b>How bins work here:</b> a bin is &quot;Occupied&quot; whenever any stock row currently points to it, and
-        &quot;Free&quot; the moment its last stock is moved OUT. New stock can be assigned IN to any bin, occupied or not.
-      </div>
       <div className="toolbar">
         <div className="search-wrap" style={{ flex: "none", width: 280 }}>
           <svg
