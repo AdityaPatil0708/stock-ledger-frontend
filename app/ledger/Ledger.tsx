@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useLedger } from "./useLedger";
 import Modals from "./Modals";
-import type { SortKey, StockItem } from "./types";
+import type { SortKey, StockItem, TxLogEntry } from "./types";
 import type { Role } from "../lib/api";
 import { fmtNum, formatPacking } from "./utils";
 
@@ -193,13 +193,14 @@ function StockTab({ ledger, canEdit }: { ledger: LedgerApi; canEdit: boolean }) 
                   {c.label} <SortArrow ledger={ledger} sortKey={c.key} />
                 </th>
               ))}
+              <th>Activity</th>
               <th></th>
             </tr>
           </thead>
           <tbody>
             {pageItems.length === 0 && (
               <tr>
-                <td colSpan={9}>
+                <td colSpan={10}>
                   <div className="empty-state">
                     <div className="glyph">∅</div>
                     No stock rows match this search.
@@ -230,8 +231,14 @@ function StockTab({ ledger, canEdit }: { ledger: LedgerApi; canEdit: boolean }) 
   );
 }
 
+function latestActivityFor(it: StockItem, txLog: TxLogEntry[]): TxLogEntry | null {
+  const batch = it.batchNo != null ? String(it.batchNo) : "";
+  return txLog.find((tx) => tx.material === it.material && String(tx.batchNo ?? "") === batch) || null;
+}
+
 function StockRow({ it, ledger, canEdit }: { it: StockItem; ledger: LedgerApi; canEdit: boolean }) {
   const isOccupied = !!it.location;
+  const lastTx = latestActivityFor(it, ledger.txLog);
   return (
     <tr>
       <td>
@@ -252,6 +259,18 @@ function StockRow({ it, ledger, canEdit }: { it: StockItem; ledger: LedgerApi; c
       </td>
       <td>
         <ReservationCell it={it} ledger={ledger} canEdit={canEdit} />
+      </td>
+      <td>
+        {lastTx ? (
+          <>
+            <span className={"log-badge " + lastTx.type} style={{ fontSize: 10 }}>
+              {lastTx.type === "ORDER" ? "IN ORDER" : lastTx.type === "UNORDER" ? "ORDER CLEARED" : lastTx.type}
+            </span>
+            <div className="mat-brand">{new Date(lastTx.ts).toLocaleString()}</div>
+          </>
+        ) : (
+          "—"
+        )}
       </td>
       <td>
         {canEdit && (

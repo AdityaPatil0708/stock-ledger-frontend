@@ -36,7 +36,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 #root {
-  max-width: 1320px;
+  max-width: 1450px;
   margin: 0 auto;
   padding: 28px 24px 80px;
 }
@@ -293,7 +293,7 @@ thead th .arrow {
   margin-left: 3px;
 }
 tbody td {
-  padding: 10px 14px;
+  padding: 8px 10px;
   border-bottom: 1px solid var(--line);
   vertical-align: middle;
   font-size: 13px;
